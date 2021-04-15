@@ -1,0 +1,43 @@
+{
+  "short_name": "Bebuzzle",
+  "name": "Bebullito Games | Bebuzzle",
+  "icons": [
+    {
+      "src": "/icons/icon192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon144.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    },{
+      "src": "/icons/icon96.png",
+      "type": "image/png",
+      "sizes": "96x96"
+    },{
+      "src": "/icons/icon72.png",
+      "type": "image/png",
+      "sizes": "72x72"
+    },{
+      "src": "/icons/icon48.png",
+      "type": "image/png",
+      "sizes": "48x48"
+    },{
+      "src": "/icons/playstore.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },{
+      "src": "/icons/appstore.png",
+      "type": "image/png",
+      "sizes": "1024x1024"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#CDDC39",
+  "display": "standalone",
+  "theme_color": "#00BCD4",
+  "shortcuts": [],
+  "description": "Puzzle for Bebullito"
+}
