@@ -1,0 +1,46 @@
+{
+  "name": "Bebulluzzle",
+  "version": "0.0.1",
+  "api": "",
+  "settings:": {
+    "game_type": true
+  },
+  "categories": [
+    {
+      "name": "Pirates",
+      "slug": "pirates",
+      "cover": {"route": "/assets/cover/pirate/", "filename": "pirate.jpg"},
+      "levels": [
+        {
+          "name": "Treasure's Shore",
+          "slug": "treasure_shore",
+          "cover": {"route": "/assets/level/treasure_shore/", "filename": "cover.jpg"},
+          "background": {"route": "/assets/level/treasure_shore/", "filename": "background.jpg"},
+          "pieces": [
+            {
+              "size": {"width": 100, "height": 100},
+              "position": {"x":  100, "y":  200},
+              "img": {"route": "/assets/level/treasure_shore/", "filename": "ship.png"}
+            }, {
+              "size": {"width": 100, "height": 100},
+              "position": {"x":  100, "y":  200},
+              "img": {"route": "/assets/level/treasure_shore/", "filename": "pirate.png"}
+            }, {
+              "size": {"width": 100, "height": 100},
+              "position": {"x":  100, "y":  200},
+              "img": {"route": "/assets/level/treasure_shore/", "filename": "treasure.png"}
+            }, {
+              "size": {"width": 100, "height": 100},
+              "position": {"x":  100, "y":  200},
+              "img": {"route": "/assets/level/treasure_shore/", "filename": "flag.png"}
+            }, {
+              "size": {"width": 100, "height": 100},
+              "position": {"x":  100, "y":  200},
+              "img": {"route": "/assets/level/treasure_shore/", "filename": "rock.png"}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
