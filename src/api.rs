@@ -13,6 +13,7 @@ use web_sys::{
     RequestMode,
 };
 use crate::utils::gamedata::GameData;
+use std::collections::HashMap;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
@@ -75,6 +76,7 @@ pub async fn fetch(url: &str) -> Result<JsValue, ApiError> {
 }
 
 pub async fn fetch_game_data() -> Result<GameData, ApiError> {
+    info!("Fetch game_data invoked");
     let item = "game_data";
     let game_data: Result<GameData, ApiError> = match  exists_in_storage(item){
         true => {
@@ -92,7 +94,41 @@ pub async fn fetch_game_data() -> Result<GameData, ApiError> {
         }
     };
 
-    Ok(game_data.ok().unwrap())
+    let game_data = game_data.ok().unwrap();
+
+    load_assets(&game_data).await;
+
+    Ok(game_data)
+}
+
+pub async fn load_assets(game_data: &GameData) {
+    info!("loading assets....");
+    let mut assets:HashMap<String, String> = HashMap::new();
+    for cat in &game_data.categories{
+      info!("Category: {}", cat.name);
+        assets.insert(
+            cat.slug.to_string(),
+            format!("{}{}", cat.cover.route, cat.cover.filename)
+        );
+        for lvl in &cat.levels {
+            assets.insert(
+                lvl.slug.to_string(),
+                format!("{}{}", lvl.cover.route, lvl.cover.filename)
+            );
+            assets.insert(
+                format!("{}-{}-bg", cat.slug, lvl.slug),
+                format!("{}{}", lvl.background.route, lvl.background.filename)
+            );
+            for (i, piece) in lvl.pieces.iter().enumerate() {
+                assets.insert(
+                    format!("{}-{}-p{}", cat.slug, lvl.slug, i),
+                    format!("{}{}", piece.img.route ,piece.img.filename)
+                );
+            }
+        }
+    }
+    info!("Hashmap: {:?}", assets);
+
 }
 
 pub fn exists_in_storage(item: &str) -> bool {

@@ -20,8 +20,6 @@ use crate::theme::Theme;
 use crate::containers::*;
 use crate::utils::gamedata;
 use crate::utils::gamedata::GameData;
-use js_sys::Atomics::is_lock_free;
-
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -29,23 +27,52 @@ use js_sys::Atomics::is_lock_free;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-struct App {
-    clicks: u32,
-    loading: bool,
+#[derive(Clone)]
+pub enum MenuType {
+    Categories,
+    Levels,
+}
+
+#[derive(Clone)]
+pub enum ViewState {
+    Loading,
+    Menu,
+    Levels,
+    Game(String, u8), // cat: Pirates - lvl: 2
+    Settings
+}
+
+pub struct App {
+    current_category: String,
+    current_level: u8,
     game_data: Option<GameData>,
+    view_state: ViewState,
 }
 
 #[derive(Clone)]
-enum AppModel {
-    Click,
-    Load(bool),
+pub enum AppModel {
+    // Load,
     SetGameData(GameData),
+    ChangeView(ViewState),
 }
 
 #[derive(Clone)]
-enum AppView {
-    Clicked(u32),
-    Loaded(bool),
+pub enum AppView {
+    Loading(Patch<View<HtmlElement>>),
+    Menu(Patch<View<HtmlElement>>),
+    Levels(Patch<View<HtmlElement>>),
+    Game(Patch<View<HtmlElement>>),
+    ChangeState(Patch<View<HtmlElement>>),
+    Settings(Patch<View<HtmlElement>>),
+}
+
+impl AppView {
+    fn patch_view(&self) -> Option<Patch<View<HtmlElement>>> {
+        match self {
+            AppView::ChangeState(patch) => Some(patch.clone()),
+            _ => Some(Patch::Replace {index:0, value: View::from(ViewBuilder::from(builder!{<h1>"Default"</h1>}))})
+        }
+    }
 }
 
 impl Component for App {
@@ -55,45 +82,53 @@ impl Component for App {
 
     fn bind(&self, sub: &Subscriber<AppModel>)  {}
 
-    fn update(&mut self, msg: &AppModel, tx: &Transmitter<AppView>, _sub: &Subscriber<AppModel>) {
+    fn update(&mut self, msg: &AppModel, tx: &Transmitter<AppView>, sub: &Subscriber<AppModel>) {
         match msg {
-            AppModel::Click => {
-                self.clicks += 1;
-                tx.send(&AppView::Clicked(self.clicks.clone()));
+            AppModel::ChangeView(view) => {
+                info!("here we should change the state");
+                self.view_state = view.clone();
+                let to_show: ViewBuilder<HtmlElement> = match view {
+                    ViewState::Loading => {
+                        info!("loading...");
+                        let b = builder! {<h1>"Loading..."</h1>};
+                        b
+                    },
+                    ViewState::Menu => builder! {<h1>"Categories"</h1>},
+                    ViewState::Levels => builder! {<h1>"Levels"</h1>},
+                    ViewState::Game(category, level) => builder!{<h1>"let's play"</h1>},
+                    ViewState::Settings => builder!{<h1>"Settings"</h1>},
+                    _ => builder! {<h1>"404"</h1>}
+                };
+                tx.send(&AppView::ChangeState(Patch::Replace {index:0, value: View::from(ViewBuilder::from(to_show))}));
             },
-            AppModel::Load(isLoading) => {
-                self.loading = isLoading.to_owned();
-                tx.send(&AppView::Loaded(self.loading.clone()));
-            },
-            AppModel::SetGameData(game_data) => {
-                info!("game data added!: {:?}", game_data);
-                self.game_data = Some(game_data.clone());
+            AppModel::SetGameData(data) => {
+                self.game_data = Some(data.clone());
             }
         }
     }
 
     fn view(&self, tx: &Transmitter<AppModel>, rx: &Receiver<AppView>) -> ViewBuilder<HtmlElement> {
-        if self.loading {
-            let txx = trns();
-            let t = tx.clone();
-            txx.send_async(async move{
-                let game_data = api::fetch_game_data().await.unwrap();
-                t.send(&AppModel::Load(false).clone());
-                t.send(&AppModel::SetGameData(game_data));
-            });
-        }
-        return builder! {
-            <div>
-                <h1>{(format!("Loading..."), rx.branch_map(|msg| match msg {
-                    AppView::Loaded(v) => match v {
-                        false => format!("Done!"),
-                        true => format!("Loading...")
-                    },
-                _ => format!("")
-            }))}</h1>
+        match self.view_state  {
+          ViewState::Loading => {
+              info!("I'm loading!");
+              let txx = trns();
+              let t = tx.clone();
+              txx.send_async(async move{
+                  let game_data = api::fetch_game_data().await.unwrap();
+                  t.send(&AppModel::SetGameData(game_data));
+                  t.send(&AppModel::ChangeView(ViewState::Menu));
+              });
+          },
+            _ => info!("meee")
+        };
+
+        return builder!{
+            <div
+                patch:children=rx.branch_filter_map(AppView::patch_view)
+            >
+                "Bebuzzle"
             </div>
         }
-
     }
 }
 
@@ -102,10 +137,12 @@ pub fn main() -> Result<(), JsValue> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     console_log::init_with_level(Level::Trace).unwrap();
     let gizmo = Gizmo::from(App{
-        clicks: 0,
-        loading: true,
+        current_category: String::from(""),
+        current_level: 0,
         game_data: None,
+        view_state: ViewState::Loading,
     });
+    gizmo.trns.send(&AppModel::ChangeView(ViewState::Loading));
     let view = View::from(gizmo.view_builder());
     view.run();
     Ok(())
